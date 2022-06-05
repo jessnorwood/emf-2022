@@ -16,7 +16,7 @@ class EightBall(MenuApp):
         super().on_start()
         choices = (
             ("Magic 8 Ball", self.do_8_ball),
-            ("Roll a D6", self.do_d6),
+            ("Roll dice", self.do_dice),
             ("Toss a coin", self.do_coin),
             ("Meaning of life", self.do_life),
         )
@@ -38,8 +38,8 @@ class EightBall(MenuApp):
         window = EightBallWindow(buttons=self.new_buttons)
         self.push_window(window, activate=True)
 
-    def do_d6(self):
-        window = D6Window(buttons=self.new_buttons)
+    def do_dice(self):
+        window = DiceWindow(buttons=self.new_buttons)
         self.push_window(window, activate=True)
 
     def do_coin(self):
@@ -75,7 +75,7 @@ class ShakeyWindow(TextWindow):
         super().__init__(bg, fg, title, font, buttons)
 
         if title is None:
-            self.set_title(self.DEFAULT_TITLE, redraw=False)
+            self.set_title(self.default_title, redraw=False)
 
         self.bg = self.COLOURS[self.colour_index][0]
         self.fg = self.COLOURS[self.colour_index][1]
@@ -83,7 +83,7 @@ class ShakeyWindow(TextWindow):
     def redraw(self):
         self.cls()
         self.println("")
-        for line in self.flow_lines(self.INTRO_TEXT):
+        for line in self.flow_lines(self.intro_text):
             self.println(line)
 
     def on_shake(self):
@@ -92,7 +92,7 @@ class ShakeyWindow(TextWindow):
         self.cls()
         self.colour_index = (self.colour_index +1)%len(self.COLOURS)
         self.println("")
-        for line in self.flow_lines(self.ANSWER_INTRO_TEXT):
+        for line in self.flow_lines(self.answer_intro_text):
             self.println(line)
 
         lines = self.flow_lines(self.get_answer(), self.ANSWER_FONT)
@@ -104,15 +104,15 @@ class ShakeyWindow(TextWindow):
             self.draw_text(line, linex, liney, self.bg, self.fg, self.ANSWER_FONT)
 
     def get_answer(self):
-        return random.choice(self.CHOICES)
+        return random.choice(self.choices)
 
 
 class EightBallWindow(ShakeyWindow):
-    DEFAULT_TITLE = "Magic 8 Ball"
-    INTRO_TEXT = "Ask me a\nquestion\nthen shake me!"
-    ANSWER_INTRO_TEXT = "The 8 ball\nanswers:"
+    default_title = "Magic 8 Ball"
+    intro_text = "Ask me a\nquestion\nthen shake me!"
+    answer_intro_text = "The 8 ball\nanswers:"
     # Source: https://en.wikipedia.org/wiki/Magic_8_Ball
-    CHOICES = ['It is\ncertain',
+    choices = ['It is\ncertain',
         'It is\ndecided-\nly so',
         'Without\na doubt',
         'Yes\ndefin-\nitely',
@@ -136,24 +136,69 @@ class EightBallWindow(ShakeyWindow):
     colour_index = 2
 
 class D6Window(ShakeyWindow):
-    DEFAULT_TITLE = "Roll a D6"
-    INTRO_TEXT = "Shake me!"
-    ANSWER_INTRO_TEXT = "You rolled a"
-    CHOICES = ['1','2','3','4','5','6']
+    default_title = "Roll a D6"
+    intro_text = "Shake me!"
+    answer_intro_text = "You rolled a"
+    choices = ['1','2','3','4','5','6']
     colour_index = 0
 
+class DiceWindow(ShakeyWindow):
+    default_title = "Roll 1D6"
+    intro_text = "Up/Down\nto change number;\nLeft/Right to\nchange\Shake me!"
+    answer_intro_text = "You rolled"
+    colour_index = 0
+    num = 1
+    faces = 6
+
+    def __init__(self, bg=None, fg=None, title=None, font=None, buttons=None):
+        super().__init__(bg, fg, title, font, buttons)
+
+        self.buttons.on_press(JOY_UP, lambda:self.update_numbers(1,0))
+        self.buttons.on_press(JOY_DOWN, lambda:self.update_numbers(-1,0))
+        self.buttons.on_press(JOY_LEFT, lambda:self.update_numbers(0,-1))
+        self.buttons.on_press(JOY_RIGHT, lambda:self.update_numbers(0,1))
+
+    def update_numbers(self, num_delta, faces_delta):
+        self.num += num_delta
+        self.num = max(self.num, 1)
+        self.num = min(self.num, 5)
+
+        self.faces += faces_delta
+        self.faces = max(self.faces, 1)
+
+        self.set_title(f"Roll {self.num:d}D{self.faces:d}", redraw=False)
+        self.redraw()
+
+    @property
+    def intro_text(self):
+        return f"""Up/Down to
+change number
+of dice.
+
+Left/Right to
+change faces.
+
+Shake me to
+roll {self.num:d}D{self.faces:d}!"""
+
+    def get_answer(self):
+        answers = []
+        for _ in range(0, self.num):
+            answers.append(str(random.randint(1, self.faces)))
+        return "\n".join(answers)
+
 class CoinWindow(ShakeyWindow):
-    DEFAULT_TITLE = "Toss a Coin"
-    INTRO_TEXT = "Shake me!"
-    ANSWER_INTRO_TEXT = "You got:"
-    CHOICES = ['HEADS','TAILS']
+    default_title = "Toss a Coin"
+    intro_text = "Shake me!"
+    answer_intro_text = "You got:"
+    choices = ['HEADS','TAILS']
     colour_index = 4
 
 class LifeWindow(ShakeyWindow):
-    DEFAULT_TITLE = "Meaning of life"
-    INTRO_TEXT = "Shake me to\nfind out the\nAnswer to the\nUltimate\nQuestion\nof Life,\nthe Universe,\nand Everything."
-    ANSWER_INTRO_TEXT = "The answer is:"
-    CHOICES = ['42',]
+    default_title = "Meaning of life"
+    intro_text = "Shake me to\nfind out the\nAnswer to the\nUltimate\nQuestion\nof Life,\nthe Universe,\nand Everything."
+    answer_intro_text = "The answer is:"
+    choices = ['42',]
     colour_index = 4
 
 main = EightBall
