@@ -135,12 +135,6 @@ class EightBallWindow(ShakeyWindow):
     ]
     colour_index = 2
 
-class D6Window(ShakeyWindow):
-    default_title = "Roll a D6"
-    intro_text = "Shake me!"
-    answer_intro_text = "You rolled a"
-    choices = ['1','2','3','4','5','6']
-    colour_index = 0
 
 class DiceWindow(ShakeyWindow):
     default_title = "Roll 1D6"
